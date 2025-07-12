@@ -1,5 +1,6 @@
 .DS_Store
 .env
 output
+output_video
 node_modules
 translate

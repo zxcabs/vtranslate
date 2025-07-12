@@ -22,7 +22,11 @@ const output_dir = path.normalize(`${TRANSLATE_DIR}/${named_dir}`)
 async function translateFile(file) {
     const fileName = path.basename(file.name, path.extname(file.name))
     console.log(`Translate file: ${fileName}`)
-    await VOTApi.translate(file.public_url, output_dir, fileName)
+    try {
+        await VOTApi.translate(file.public_url, output_dir, fileName)
+    } catch (error) {
+        console.error(error)
+    }   
 }
 
 for (const file of files) {

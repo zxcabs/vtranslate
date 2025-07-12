@@ -1,0 +1,18 @@
+{
+  "name": "test-vtrans",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "minimist": "^1.2.8",
+    "dotenv": "^17.2.0",
+    "make-dir": "^5.0.0",
+    "vot-cli": "^1.4.3"
+  }
+}

@@ -1,7 +1,6 @@
 import { promisify } from 'node:util'
 import { exec } from 'node:child_process'
 import path from 'node:path'
-import { rm } from 'node:fs/promises'
 import { makeDirectory } from 'make-dir'
 import isFileExist from '../utils/isFileExist.mjs'
 
@@ -19,7 +18,7 @@ export default class FFApi {
         makeDirectory(outputDir)
 
         if (await isFileExist(outputFile)) {
-            await rm(outputFile)
+           return
         }
 
         const cmd = `ffmpeg -i "${file}" -i "${audioFile}" -i "${subEnFile}" -i "${subRuFile}"\

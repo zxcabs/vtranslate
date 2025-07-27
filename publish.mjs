@@ -2,7 +2,7 @@
 import 'dotenv/config'
 import parseArgs from 'minimist'
 import YDApi from "./api/YDApi.mjs"
-import stopWithError from './utils/stopWithError.mjs'
+import stopWithError from './utils/stopWithError.js'
 import path from 'path'
 import saveFile from './utils/saveFile.mjs'
 

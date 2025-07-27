@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import parseArgs from 'minimist'
-import stopWithError from './utils/stopWithError.mjs'
+import stopWithError from './utils/stopWithError.js'
 import readJsonFile from './utils/readJsonFile.mjs'
 import VOTApi from './api/VOTApi.mjs'
 import path from 'node:path'
@@ -26,7 +26,7 @@ async function translateFile(file) {
         await VOTApi.translate(file.public_url, output_dir, fileName)
     } catch (error) {
         console.error(error)
-    }   
+    }
 }
 
 for (const file of files) {

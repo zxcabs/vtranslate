@@ -4,15 +4,24 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch './server' --exec 'node' ./index.ts"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "minimist": "^1.2.8",
     "dotenv": "^17.2.0",
+    "dotenv-defaults": "^5.0.2",
+    "express": "^5.1.0",
     "make-dir": "^5.0.0",
+    "minimist": "^1.2.8",
     "vot-cli": "^1.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.14",
+    "nodemon": "^3.1.10",
+    "vite": "^7.0.4"
   }
 }

@@ -1,5 +1,5 @@
 import type { ErrorRequestHandler } from "express"
-import ApiError from "./errors/ApiError.ts"
+import ApiError from "../errors/ApiError.ts"
 
 const apiErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     if (err instanceof ApiError) {
@@ -10,7 +10,7 @@ const apiErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     res.status(500).json({
         message: (err as any)?.message ?? 'Internal Server Error',
         status: 500
-    });
+    })
 }
 
 export default apiErrorHandler

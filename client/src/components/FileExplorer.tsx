@@ -1,63 +1,53 @@
 // src/components/FileExplorer.tsx
-import React, { useState, useEffect } from 'react';
-
-interface DirEntry {
-  name: string;
-  type: 'file' | 'directory';
-}
+import React, { useState, useEffect } from 'react' 
+import { DirEntryType, type DirEntry } from '../../../types/DirEntry.type' 
 
 const FileExplorer: React.FC = () => {
-  const [path, setPath] = useState<string>('/');
-  const [entries, setEntries] = useState<DirEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [path, setPath] = useState<string>('/') 
+  const [entries, setEntries] = useState<DirEntry[]>([]) 
+  const [loading, setLoading] = useState<boolean>(true) 
+  const [error, setError] = useState<string | null>(null) 
 
-  const API_BASE = '/api'; // Замени на свой бэкенд
+  const API_BASE = '/api' 
 
   useEffect(() => {
-    fetchDirectory(path);
-  }, [path]);
+    fetchDirectory(path) 
+  }, [path]) 
 
   const fetchDirectory = async (dirPath: string) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true) 
+    setError(null) 
     try {
-      const response = await fetch(`${API_BASE}/readdir?path=${encodeURIComponent(dirPath)}`);
+      const response = await fetch(`${API_BASE}/readdir?path=${encodeURIComponent(dirPath)}`) 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || 'Failed to load directory');
+        const err = await response.json() 
+        throw new Error(err.message || 'Failed to load directory') 
       }
-      const data: string[] = await response.json();
 
-      // Преобразуем в объекты с типом (в твоём API можно улучшить, чтобы возвращал тип)
-      const list: DirEntry[] = data.map((name) => {
-        // Пока просто догадаемся по отсутствию точки — можно улучшить на бэкенде
-        const type = name.includes('.') ? 'file' : 'directory';
-        return { name, type };
-      });
+      const list: DirEntry[] = await response.json()
 
-      setEntries(list);
+      setEntries(list) 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Unknown error') 
     } finally {
-      setLoading(false);
+      setLoading(false) 
     }
-  };
+  } 
 
-  const handleNavigate = (name: string, type: 'file' | 'directory') => {
-    if (type === 'file') return; // клик по файлу — ничего не делаем (можно открыть, скачать и т.д.)
+  const handleNavigate = (name: string, type: DirEntryType ) => {
+    if (type === DirEntryType.File) return 
     
     const newPath = path === '/' 
       ? `/${name}` 
-      : `${path}/${name}`;
-    setPath(newPath);
-  };
+      : `${path}/${name}` 
+    setPath(newPath) 
+  } 
 
   const goUp = () => {
-    if (path === '/') return;
-    const upPath = path.split('/').slice(0, -1).join('/') || '/';
-    setPath(upPath);
-  };
+    if (path === '/') return 
+    const upPath = path.split('/').slice(0, -1).join('/') || '/' 
+    setPath(upPath) 
+  } 
 
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white shadow-lg rounded-lg">
@@ -93,13 +83,9 @@ const FileExplorer: React.FC = () => {
               <li key={entry.name}>
                 <button
                   onClick={() => handleNavigate(entry.name, entry.type)}
-                  className={`w-full text-left px-3 py-2 rounded transition-colors ${
-                    entry.type === 'directory'
-                      ? 'bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 cursor-default'
-                  }`}
+                  className={`w-full text-left px-3 py-2 rounded transition-colors bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer`}
                 >
-                  {entry.type === 'directory' ? '📁' : '📄'} {entry.name}
+                  {entry.type === DirEntryType.Directory ? '📁' : '📄'} {entry.name}
                 </button>
               </li>
             ))
@@ -107,7 +93,7 @@ const FileExplorer: React.FC = () => {
         </ul>
       )}
     </div>
-  );
-};
+  ) 
+} 
 
-export default FileExplorer;
+export default FileExplorer 

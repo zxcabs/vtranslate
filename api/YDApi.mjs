@@ -1,4 +1,4 @@
-import savedAsync from "../utils/savedAsync.mjs";
+import savedAsync from "../utils/savedAsync.mjs"
 
 const YD_URL_PREFIX = 'https://cloud-api.yandex.net/v1'
 const YD_MEDIA_TYPE_VIDEO = 'video'
@@ -31,7 +31,7 @@ async function createRequest(token, path, options = { method: 'GET' }) {
 export default class YDApi {
     #token
     constructor(token) {
-        this.#token = token;
+        this.#token = token
     }
 
     async get(path) {

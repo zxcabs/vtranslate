@@ -1,6 +1,7 @@
 .git
 npm-debug.log
 Dockerfile
+docker-compose.yml
 .dockerignore
 .DS_Store
 .env
@@ -9,3 +10,5 @@ output_video
 node_modules
 translate
 video
+
+client/node_modules

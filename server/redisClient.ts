@@ -71,6 +71,8 @@ export default class RedisClient {
         this.client.on('end', () => {
             console.log('Redis connection closed')
         })
+
+        console.log('CTOR:', this.client.constructor.name)
     }
 
     async connect(): Promise<this> {

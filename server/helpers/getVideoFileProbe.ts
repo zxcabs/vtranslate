@@ -14,9 +14,7 @@ export async function getVideoFileProbe(filePath: string): Promise<VideoInfo> {
     }
 
     try {
-        const { stdout } = await execAsync(
-            `ffprobe -v quiet -print_format json -show_format -show_streams "${resolvedPath}"`,
-        )
+        const { stdout } = await execAsync(`ffprobe -v quiet -print_format json -show_format -show_streams "${resolvedPath}"`)
         const data = JSON.parse(stdout)
 
         return {

@@ -1,118 +1,168 @@
 import { createClient, type RedisClientType, type RedisArgument } from 'redis'
-import { REDIS_URL, REDIS_CACHE_TTL } from './config.ts'
-import type { Json } from '../types/Json.type.ts'
 
 const RECONNECT_MIN_DELAY = 1000
 const RECONNECT_MAX_DELAY = 30000
 const MAX_RECONNECT_ATTEMPTS = 10
+const DEFAULT_URL = 'redis://localhost:6379'
+const DEFAULT_TTL = 60 * 60 * 24
 
-let client: RedisClientType | null = null
-let isShuttingDown = false
-const reconnectTimeout: NodeJS.Timeout | null = null
+interface RedisClientConstructorOptions {
+    url?: string
+    ttl?: number
+    reconnectMinDelay?: number
+    reconnectMaxDelay?: number
+    maxRecconectAttempts?: number
+}
 
-export async function connectRedis(): Promise<RedisClientType> {
-    if ((client && client.isReady) || client) {
-        return client
-    }
+export default class RedisClient {
+    protected isShuttingDown: boolean = false
+    protected client: RedisClientType | null = null
+    protected ttl: number = 0
 
-    client = createClient({
-        url: REDIS_URL,
-        socket: {
-            reconnectStrategy: (retries) => {
-                if (isShuttingDown) {
-                    return false
-                }
+    constructor(options?: RedisClientConstructorOptions) {
+        const {
+            reconnectMinDelay = RECONNECT_MIN_DELAY,
+            reconnectMaxDelay = RECONNECT_MAX_DELAY,
+            maxRecconectAttempts = MAX_RECONNECT_ATTEMPTS,
+            url = DEFAULT_URL,
+            ttl = DEFAULT_TTL,
+        } = options ?? {}
 
-                if (retries > MAX_RECONNECT_ATTEMPTS) {
-                    console.error('Maximum recconect attempts to Redis')
-                    return false
-                }
+        this.ttl = ttl
 
-                const delay = Math.min(RECONNECT_MIN_DELAY * Math.pow(2, retries), RECONNECT_MAX_DELAY)
-                console.log(`Trying to reconnect to Redis after ${delay} ms (retry: ${retries})`)
-                return delay
+        this.client = createClient({
+            url: url,
+            socket: {
+                reconnectStrategy: (retries: number) => {
+                    if (this.isShuttingDown) {
+                        return false
+                    }
+
+                    if (retries > maxRecconectAttempts) {
+                        console.error('Maximum reconnect attempts to Redis reached')
+                        return false
+                    }
+
+                    const delay = Math.min(reconnectMinDelay * Math.pow(2, retries), reconnectMaxDelay)
+                    console.log(`Trying to reconnect to Redis after ${delay} ms (retry: ${retries})`)
+                    return delay
+                },
             },
-        },
-    })
+        })
 
-    client.on('error', (err) => {
-        if (!isShuttingDown) {
-            console.error('Redis:', err.message)
-        }
-    })
+        this.client.on('error', (err) => {
+            if (!this.isShuttingDown) {
+                console.error('Redis error:', err.message)
+            }
+        })
 
-    client.on('connect', () => {
-        if (!isShuttingDown) {
-            console.log('Redis connected')
-        }
-    })
+        this.client.on('connect', () => {
+            if (!this.isShuttingDown) {
+                console.log('Redis connected')
+            }
+        })
 
-    client.on('reconnecting', () => {
-        if (!isShuttingDown) {
-            console.log('Reonnecting to Redis...')
-        }
-    })
+        this.client.on('reconnecting', () => {
+            if (!this.isShuttingDown) {
+                console.log('Reconnecting to Redis...')
+            }
+        })
 
-    client.on('end', () => {
-        console.log('Redis connection closed')
-        if (reconnectTimeout) {
-            clearTimeout(reconnectTimeout)
-        }
-    })
-
-    try {
-        await client.connect()
-    } catch (err) {
-        console.error('Redis', err)
-        throw err
+        this.client.on('end', () => {
+            console.log('Redis connection closed')
+        })
     }
 
-    return client
-}
+    async connect(): Promise<this> {
+        if (this.isShuttingDown) {
+            throw new Error('Cannot connect: Redis client is shutting down')
+        }
 
-export async function shutdownRedis(): Promise<void> {
-    if (isShuttingDown) return
-    isShuttingDown = true
+        if (this.client?.isReady) {
+            return this
+        }
 
-    if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout)
-    }
-
-    if (client) {
         try {
-            await client.quit()
-            console.log('Redis disconnect succeseful')
+            await this.client?.connect()
         } catch (err) {
-            console.error('Redis on disconnect', err)
-        } finally {
-            client = null
+            console.error('Failed to connect to Redis:', err)
+            throw err
+        }
+
+        return this
+    }
+
+    async shutdown(): Promise<this> {
+        if (this.isShuttingDown) return this
+        this.isShuttingDown = true
+
+        if (this.client) {
+            try {
+                await this.client.quit()
+                console.log('Redis disconnected successfully')
+            } catch (err) {
+                console.error('Error during Redis disconnect:', err)
+            } finally {
+                this.client = null
+            }
+        }
+
+        return this
+    }
+
+    async set(key: string, value: RedisArgument, ttl?: number): Promise<this> {
+        await this.connect()
+
+        if (!this.client) {
+            throw new Error('Redis client is not available')
+        }
+
+        await this.client.set(key, value, { EX: ttl ?? this.ttl })
+        return this
+    }
+
+    async get(key: string): Promise<string | null> {
+        await this.connect()
+
+        if (!this.client) {
+            throw new Error('Redis client is not available')
+        }
+
+        return await this.client.get(key)
+    }
+
+    async del(key: string): Promise<number> {
+        await this.connect()
+
+        if (!this.client) {
+            throw new Error('Redis client is not available')
+        }
+
+        return await this.client.del(key)
+    }
+
+    async setJson<T>(key: string, value: T, ttl?: number): Promise<this> {
+        const str = JSON.stringify(value)
+        await this.set(key, str, ttl)
+        return this
+    }
+
+    async getJson<T>(key: string): Promise<T | null> {
+        const result = await this.get(key)
+
+        if (!result) {
+            return null
+        }
+
+        try {
+            return JSON.parse(result) as T
+        } catch (err) {
+            console.error('Failed to parse JSON from Redis:', err)
+            return null
         }
     }
-}
 
-export async function set(key: string, value: RedisArgument, ttl: number = REDIS_CACHE_TTL): Promise<string | null> {
-    const redisClient = await connectRedis()
-
-    return await redisClient.set(key, value, { EX: ttl })
-}
-
-export async function get(key: string): Promise<string | null> {
-    const redisClient = await connectRedis()
-    return await redisClient.get(key)
-}
-
-export async function setJson<T extends Json>(key: string, value: T, ttl: number = REDIS_CACHE_TTL): Promise<T | null> {
-    const str = JSON.stringify(value)
-    const result = await set(key, str, ttl)
-    return result ? value : null
-}
-
-export async function getJson<T extends Json>(key: string): Promise<T | null> {
-    const result = await get(key)
-
-    if (!result) {
-        return null
+    get redisClient(): RedisClientType | null {
+        return this.client
     }
-
-    return JSON.parse(result) as T
 }

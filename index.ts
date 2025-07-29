@@ -1,7 +1,7 @@
 import 'dotenv-defaults/config.js'
 import app from './server/index.ts'
 import stopWithError from './utils/stopWithError.ts'
-import { connectRedis, shutdownRedis } from './server/redisClient.ts'
+import { redisClient } from './server/instances.ts'
 
 const PORT: string | undefined = process.env.PORT
 
@@ -18,7 +18,7 @@ process.on('unhandledRejection', (err) => {
 const signals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT']
 
 try {
-    await connectRedis()
+    await redisClient.connect()
 } catch (err) {
     console.error('Cannont connect to redis server.', err, '\nExit')
     process.exit(1)
@@ -40,7 +40,7 @@ signals.forEach((signal) => {
             console.log('HTTPServer stopped')
 
             try {
-                await shutdownRedis()
+                await redisClient.shutdown()
             } catch (err) {
                 console.error(err)
             }

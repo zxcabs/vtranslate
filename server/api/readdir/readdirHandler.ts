@@ -1,10 +1,10 @@
 import type { NextFunction, Request, Response } from 'express'
 import PathNotFoundError from '../../errors/PathNotFoundError.ts'
-import { type DirEntry } from '../../../types/DirEntry.type.ts'
+import { type DirEntry } from '../../../types/DirEntry.ts'
 import getDirEntries from '../../helpers/getDirEntries.ts'
 
 export default async function readdirHandler(req: Request, res: Response, next: NextFunction) {
-    const path: string = typeof req.query.path === 'string' ? req.query.path : '/'
+    const path: string = res.locals.resolvedPath
 
     try {
         const dirListResponce: DirEntry[] = await getDirEntries(path)

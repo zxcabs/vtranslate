@@ -1,4 +1,4 @@
-import { type DirEntry, DirEntryType } from '../types/DirEntry.type'
+import { type DirEntry, DirEntryType } from '../types/DirEntry'
 import checkMimeIsVideo from './checkMimeIsVideo'
 
 export default function checkDirEntryIsVideo(entry: DirEntry): boolean {

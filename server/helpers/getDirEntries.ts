@@ -1,16 +1,11 @@
 import type { Dirent } from 'node:fs'
-import { DirEntryType, type DirEntry } from '../../types/DirEntry.type.ts'
 import { readdir } from 'node:fs/promises'
-import PathNotFoundError from '../errors/PathNotFoundError.ts'
-import { checkPath, resolvePath } from './path.ts'
 import mime from 'mime'
+import { DirEntryType, type DirEntry } from '../../types/DirEntry.ts'
+import { getLocalPath } from './path.ts'
 
-export default async function getDirEntries(path: string): Promise<DirEntry[]> {
-    const resolvedPath = resolvePath(path)
-
-    if (!checkPath(resolvedPath)) {
-        throw new PathNotFoundError(path)
-    }
+export default async function getDirEntries(resolvedPath: string): Promise<DirEntry[]> {
+    const localPath = getLocalPath(resolvedPath)
 
     const dirList: Dirent[] = await readdir(resolvedPath, { withFileTypes: true })
 
@@ -24,14 +19,14 @@ export default async function getDirEntries(path: string): Promise<DirEntry[]> {
 
         if (isFile) {
             acc.push({
-                parentPath: path,
+                path: localPath,
                 name: dirent.name,
                 type: DirEntryType.File,
                 mime: mime.getType(dirent.name) || 'unknown',
             })
         } else {
             acc.push({
-                parentPath: path,
+                path: localPath,
                 name: dirent.name,
                 type: DirEntryType.Directory,
             })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { DirEntryType, type DirEntry } from '../../../types/DirEntry.type'
+import { DirEntryType, type DirEntry } from '../../../types/DirEntry'
 import checkDirEntryIsVideo from '../../../utils/checkDirEntryIsVideo'
 import FileInfo from './FileInfo'
 import { getJSON } from '../api'

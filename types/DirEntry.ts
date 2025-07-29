@@ -5,13 +5,13 @@ export const enum DirEntryType {
 
 export interface DirEntryDirectory {
     name: string
-    parentPath: string
+    path: string
     type: DirEntryType.Directory
 }
 
 export interface DirEntryFile {
     name: string
-    parentPath: string
+    path: string
     type: DirEntryType.File
     mime: string
 }

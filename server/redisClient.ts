@@ -1,6 +1,6 @@
 import { createClient, type RedisClientType, type RedisArgument } from 'redis'
 import { REDIS_URL, REDIS_CACHE_TTL } from './config.ts'
-import type { Json } from '../types/Json.ts'
+import type { Json } from '../types/Json.type.ts'
 
 const RECONNECT_MIN_DELAY = 1000
 const RECONNECT_MAX_DELAY = 30000
@@ -53,7 +53,6 @@ export async function connectRedis(): Promise<RedisClientType> {
         }
     })
 
-    // При ручном отключении — не переподключаемся
     client.on('end', () => {
         console.log('Redis connection closed')
         if (reconnectTimeout) {

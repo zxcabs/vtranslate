@@ -4,16 +4,16 @@ export const enum DirEntryType {
 }
 
 export interface DirEntryDirectory {
-    name: string;
-    parentPath: string;
-    type: DirEntryType.Directory;
+    name: string
+    parentPath: string
+    type: DirEntryType.Directory
 }
 
 export interface DirEntryFile {
-    name: string;
-    parentPath: string;
-    type: DirEntryType.File;
-    mime: string;
+    name: string
+    parentPath: string
+    type: DirEntryType.File
+    mime: string
 }
 
-export type DirEntry = DirEntryDirectory | DirEntryFile;
+export type DirEntry = DirEntryDirectory | DirEntryFile  

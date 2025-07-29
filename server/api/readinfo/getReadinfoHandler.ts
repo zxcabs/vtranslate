@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from 'express'
-import PathNotFoundError from '../../errors/PathNotFoundError.ts'
 import { getVideoFileProbe } from '../../helpers/getVideoFileProbe.ts'
 
 export default async function getReadinfoHandler(req: Request, res: Response, next: NextFunction) {
@@ -11,5 +10,4 @@ export default async function getReadinfoHandler(req: Request, res: Response, ne
     } catch (err) {
         next(err)
     }
-
 }

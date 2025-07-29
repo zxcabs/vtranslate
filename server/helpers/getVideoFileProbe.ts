@@ -1,8 +1,8 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import { checkPath, resolvePath } from './path.ts';
-import PathNotFoundError from '../errors/PathNotFoundError.ts';
-import { type VideoInfo } from '../../types/VideoInfo.type.ts';
+import { checkPath, resolvePath } from './path.ts'
+import PathNotFoundError from '../errors/PathNotFoundError.ts'
+import { type VideoInfo } from '../../types/VideoInfo.type.ts'
 
 const execAsync = promisify(exec)
 
@@ -15,7 +15,7 @@ export async function getVideoFileProbe(filePath: string): Promise<VideoInfo> {
 
     try {
         const { stdout } = await execAsync(
-            `ffprobe -v quiet -print_format json -show_format -show_streams "${resolvedPath}"`
+            `ffprobe -v quiet -print_format json -show_format -show_streams "${resolvedPath}"`,
         )
         const data = JSON.parse(stdout)
 

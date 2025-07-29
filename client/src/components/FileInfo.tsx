@@ -20,11 +20,7 @@ const FileInfo: React.FC<Props> = ({ entry }) => {
         fetchFileInfo(entry)
     }, [entry])
 
-    return (
-        <div>
-            {info ? JSON.stringify(info) : null}
-        </div>
-    )
+    return <div>{info ? JSON.stringify(info) : null}</div>
 }
 
 export default FileInfo

@@ -9,7 +9,7 @@ class ApiError extends Error {
     get json() {
         return {
             status: this.status,
-            message: this.message
+            message: this.message,
         }
     }
 }

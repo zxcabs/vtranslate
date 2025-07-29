@@ -1,6 +1,6 @@
 export const enum DirEntryType {
     Directory = 'directory',
-    File = 'file'
+    File = 'file',
 }
 
 export interface DirEntryDirectory {
@@ -16,4 +16,4 @@ export interface DirEntryFile {
     mime: string
 }
 
-export type DirEntry = DirEntryDirectory | DirEntryFile  
+export type DirEntry = DirEntryDirectory | DirEntryFile

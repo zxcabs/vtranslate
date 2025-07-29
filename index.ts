@@ -5,9 +5,7 @@ import { connectRedis, shutdownRedis } from './server/redisClient.ts'
 
 const PORT: string | undefined = process.env.PORT
 
-let server
 let isShuttingDown = false
-
 
 if (!PORT) {
     stopWithError('PORT is required in ENV variable')
@@ -22,7 +20,7 @@ const signals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT']
 try {
     await connectRedis()
 } catch (err) {
-    console.error('Cannont connect to redis server. Exit')
+    console.error('Cannont connect to redis server.', err, '\nExit')
     process.exit(1)
 }
 
@@ -33,9 +31,9 @@ signals.forEach((signal) => {
 
         console.log(`\nGet signal${signal}. Shutdown...`)
 
-        server.close(async (err: Error) => {
+        server.close(async (err: Error | undefined) => {
             if (err) {
-                console.error('HTTPServer:', err)
+                console.error('HTTPServer:', err.message)
                 process.exit(1)
             }
 
@@ -59,11 +57,10 @@ signals.forEach((signal) => {
     })
 })
 
-server = app.listen(PORT, (error) => {
+const server = app.listen(PORT, (error) => {
     if (error) {
         console.error(error.message)
     } else {
         console.log(`Server is running on http://localhost:${PORT}`)
     }
 })
-

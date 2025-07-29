@@ -16,28 +16,32 @@ export default class VOTApi {
         return await isFileExist(filePath)
     }
 
-    static async audio(publicUrl, outputDir, fileName, reslang = "ru") {
+    static async audio(publicUrl, outputDir, fileName, reslang = 'ru') {
         const outputFileName = this.getOutputFileName(fileName, reslang)
 
         if (await this.isFileExist(outputDir, outputFileName, '.mp3')) {
             return
         }
 
-        const { stderr } = await asyncExec(`./node_modules/.bin/vot-cli --reslang="${reslang}" --output="${outputDir}" --output-file="${outputFileName}" ${publicUrl}`)
+        const { stderr } = await asyncExec(
+            `./node_modules/.bin/vot-cli --reslang="${reslang}" --output="${outputDir}" --output-file="${outputFileName}" ${publicUrl}`,
+        )
 
         if (stderr) {
             throw stderr
         }
     }
 
-    static async sub(publicUrl, outputDir, fileName, reslang = "en") {
+    static async sub(publicUrl, outputDir, fileName, reslang = 'en') {
         const outputFileName = this.getOutputFileName(fileName, reslang)
 
         if (await this.isFileExist(outputDir, outputFileName, '.srt')) {
             return
         }
 
-        const { stderr } = await asyncExec(`./node_modules/.bin/vot-cli  --subs-srt --reslang="${reslang}" --output="${outputDir}" --output-file="${outputFileName}" ${publicUrl}`)
+        const { stderr } = await asyncExec(
+            `./node_modules/.bin/vot-cli  --subs-srt --reslang="${reslang}" --output="${outputDir}" --output-file="${outputFileName}" ${publicUrl}`,
+        )
 
         if (stderr) {
             throw stderr
@@ -50,6 +54,5 @@ export default class VOTApi {
         await this.audio(publicUrl, outputDir, fileName, 'ru')
         await this.sub(publicUrl, outputDir, fileName, 'en')
         await this.sub(publicUrl, outputDir, fileName, 'ru')
-
     }
-} 
+}

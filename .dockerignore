@@ -1,4 +1,5 @@
 .git
+.vscode
 npm-debug.log
 Dockerfile
 docker-compose.yml
@@ -10,5 +11,4 @@ output_video
 node_modules
 translate
 video
-
 client/node_modules

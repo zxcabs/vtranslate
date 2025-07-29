@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { DirEntryType, type DirEntry, type DirEntryFile } from '../../../types/DirEntry.type'
+import { DirEntryType, type DirEntry } from '../../../types/DirEntry.type'
 import checkDirEntryIsVideo from '../../../utils/checkDirEntryIsVideo'
 import FileInfo from './FileInfo'
 import { getJSON } from '../api'
@@ -30,20 +30,16 @@ const FileExplorer: React.FC = () => {
         }
     }
 
-
-
     const handleNavigate = (entry: DirEntry) => {
         const { type, name } = entry
 
         if (checkDirEntryIsVideo(entry)) {
             setOppenedFile((last) => ({
                 ...last,
-                [entry.name]: !last[entry.name]
+                [entry.name]: !last[entry.name],
             }))
         } else if (type === DirEntryType.Directory) {
-            const newPath = path === '/'
-                ? `/${name}`
-                : `${path}/${name}`
+            const newPath = path === '/' ? `/${name}` : `${path}/${name}`
             setPath(newPath)
         }
     }
@@ -71,11 +67,7 @@ const FileExplorer: React.FC = () => {
 
             <div className="font-mono text-sm text-gray-500 mb-2">Путь: {path}</div>
 
-            {error && (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-                    Ошибка: {error}
-                </div>
-            )}
+            {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">Ошибка: {error}</div>}
 
             {loading ? (
                 <div className="text-center py-4">Загрузка...</div>
@@ -91,7 +83,9 @@ const FileExplorer: React.FC = () => {
                                     className={`w-full text-left px-3 py-2 rounded transition-colors bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer`}
                                 >
                                     {entry.type === DirEntryType.Directory ? '📁' : '📄'} {entry.name}
-                                    {entry.type === DirEntryType.File && oppenedFile[entry.name] ? <FileInfo entry={entry} /> : undefined}
+                                    {entry.type === DirEntryType.File && oppenedFile[entry.name] ? (
+                                        <FileInfo entry={entry} />
+                                    ) : undefined}
                                 </button>
                             </li>
                         ))
@@ -102,4 +96,4 @@ const FileExplorer: React.FC = () => {
     )
 }
 
-export default FileExplorer 
+export default FileExplorer

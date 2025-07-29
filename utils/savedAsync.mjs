@@ -1,7 +1,7 @@
 export default async function savedAsync(promise) {
     try {
         return [await promise]
-    } catch(error) {
+    } catch (error) {
         return [undefined, error]
     }
 }

@@ -32,4 +32,3 @@ async function translateFile(file) {
 for (const file of files) {
     await translateFile(file)
 }
-

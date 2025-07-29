@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import 'dotenv/config'
 import parseArgs from 'minimist'
-import YDApi from "./api/YDApi.mjs"
+import YDApi from './api/YDApi.mjs'
 import stopWithError from './utils/stopWithError.js'
 import path from 'path'
 import saveFile from './utils/saveFile.mjs'
-
 
 const args = parseArgs(process.argv.slice(2))
 const TOKEN = args.token || process.env.TOKEN

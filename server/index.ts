@@ -10,4 +10,4 @@ if (STATIC_DIR) {
 
 app.use('/api', api)
 
-export default app 
+export default app

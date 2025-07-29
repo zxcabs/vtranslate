@@ -1,5 +1,5 @@
-import { resolve, join, normalize } from "node:path"
-import { VIDEO_DIR } from "../config.ts"
+import { resolve, join, normalize } from 'node:path'
+import { VIDEO_DIR } from '../config.ts'
 
 const BASE_VIDEO_DIR = resolve(VIDEO_DIR)
 
@@ -8,7 +8,6 @@ export function resolvePath(inputPath: string): string {
     return normalize(joinedPath)
 }
 
-
-export function checkPath(resolvedPath: string): Boolean {
+export function checkPath(resolvedPath: string): boolean {
     return resolvedPath.startsWith(BASE_VIDEO_DIR)
 }

@@ -8,10 +8,10 @@ const MAX_RECONNECT_ATTEMPTS = 10
 
 let client: RedisClientType | null = null
 let isShuttingDown = false
-let reconnectTimeout: NodeJS.Timeout | null = null
+const reconnectTimeout: NodeJS.Timeout | null = null
 
 export async function connectRedis(): Promise<RedisClientType> {
-    if (client && client.isReady || client) {
+    if ((client && client.isReady) || client) {
         return client
     }
 
@@ -31,8 +31,8 @@ export async function connectRedis(): Promise<RedisClientType> {
                 const delay = Math.min(RECONNECT_MIN_DELAY * Math.pow(2, retries), RECONNECT_MAX_DELAY)
                 console.log(`Trying to reconnect to Redis after ${delay} ms (retry: ${retries})`)
                 return delay
-            }
-        }
+            },
+        },
     })
 
     client.on('error', (err) => {

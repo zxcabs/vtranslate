@@ -1,4 +1,4 @@
-import ApiError from "./ApiError.ts"
+import ApiError from './ApiError.ts'
 
 class PathNotFoundError extends ApiError {
     constructor(path: string) {

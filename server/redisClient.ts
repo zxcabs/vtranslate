@@ -1,4 +1,4 @@
-import { createClient, type RedisClientType, type RedisArgument } from 'redis'
+import Redis from 'ioredis'
 
 const RECONNECT_MIN_DELAY = 1000
 const RECONNECT_MAX_DELAY = 30000
@@ -16,7 +16,7 @@ interface RedisClientConstructorOptions {
 
 export default class RedisClient {
     protected isShuttingDown: boolean = false
-    protected client: RedisClientType | null = null
+    protected client: Redis
     protected ttl: number = 0
 
     constructor(options?: RedisClientConstructorOptions) {
@@ -30,23 +30,29 @@ export default class RedisClient {
 
         this.ttl = ttl
 
-        this.client = createClient({
-            url: url,
-            socket: {
-                reconnectStrategy: (retries: number) => {
-                    if (this.isShuttingDown) {
-                        return false
-                    }
+        this.client = new Redis(url, {
+            maxRetriesPerRequest: null,
+            retryStrategy: (retries: number) => {
+                if (this.isShuttingDown) {
+                    return null
+                }
 
-                    if (retries > maxRecconectAttempts) {
-                        console.error('Maximum reconnect attempts to Redis reached')
-                        return false
-                    }
+                if (retries > maxRecconectAttempts) {
+                    console.error('Maximum reconnect attempts to Redis reached')
+                    return null
+                }
 
-                    const delay = Math.min(reconnectMinDelay * Math.pow(2, retries), reconnectMaxDelay)
-                    console.log(`Trying to reconnect to Redis after ${delay} ms (retry: ${retries})`)
-                    return delay
-                },
+                const delay = Math.min(reconnectMinDelay * Math.pow(2, retries), reconnectMaxDelay)
+                console.log(`Trying to reconnect to Redis after ${delay} ms (retry: ${retries})`)
+                return delay
+            },
+            reconnectOnError: (err: Error): boolean | 1 => {
+                const target = err.message
+                if (target.includes('AUTH')) {
+                    return false
+                }
+
+                return true
             },
         })
 
@@ -71,8 +77,6 @@ export default class RedisClient {
         this.client.on('end', () => {
             console.log('Redis connection closed')
         })
-
-        console.log('CTOR:', this.client.constructor.name)
     }
 
     async connect(): Promise<this> {
@@ -80,7 +84,7 @@ export default class RedisClient {
             throw new Error('Cannot connect: Redis client is shutting down')
         }
 
-        if (this.client?.isReady) {
+        if (this.client?.status === 'connect' || this.client?.status === 'connecting' || this.client?.status === 'ready') {
             return this
         }
 
@@ -104,22 +108,20 @@ export default class RedisClient {
                 console.log('Redis disconnected successfully')
             } catch (err) {
                 console.error('Error during Redis disconnect:', err)
-            } finally {
-                this.client = null
             }
         }
 
         return this
     }
 
-    async set(key: string, value: RedisArgument, ttl?: number): Promise<this> {
+    async set(key: string, value: string, ttl?: number): Promise<this> {
         await this.connect()
 
         if (!this.client) {
             throw new Error('Redis client is not available')
         }
 
-        await this.client.set(key, value, { EX: ttl ?? this.ttl })
+        await this.client.set(key, value, 'EX', ttl ?? this.ttl)
         return this
     }
 
@@ -164,7 +166,7 @@ export default class RedisClient {
         }
     }
 
-    get redisClient(): RedisClientType | null {
+    get redisClient(): Redis {
         return this.client
     }
 }

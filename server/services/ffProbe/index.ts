@@ -1,16 +1,12 @@
 import { stat } from 'node:fs/promises'
-import Queue, { type Job } from 'bee-queue'
 import type { VideoInfo } from '../../../types/VideoInfo.ts'
 import RedisClient from '../../RedisClient.ts'
 import PathNotFoundError from '../../errors/PathNotFoundError.ts'
 import { type Stats } from 'node:fs'
-import { getVideoFileProbe } from '../../helpers/getVideoFileProbe.ts'
+import ProbeProcessor from './ProbeProcessor.ts'
+import getHashString from '../../../utils/hashString.ts'
 
 const DEFAULT_PROCESS_LIMIT = 2
-
-interface FFProbeQueueJobData {
-    path: string
-}
 
 interface FFProbeServiceConstructorOptions {
     processLimit?: number
@@ -20,17 +16,13 @@ interface FFProbeServiceConstructorOptions {
 class FFProbeService {
     private processLimit: number
     protected redis: RedisClient
-    protected queName: string = 'FFProbeService'
-    protected que: Queue
+    protected probeProcessor: ProbeProcessor
 
     constructor(options: FFProbeServiceConstructorOptions) {
         const { processLimit = DEFAULT_PROCESS_LIMIT, redis } = options ?? {}
 
-        this.processLimit = processLimit
         this.redis = redis
-
-        this.que = new Queue<FFProbeQueueJobData>(this.queName, { redis: redis.redisClient })
-        this.registerQueProcess()
+        this.probeProcessor = new ProbeProcessor({ redis: redis.redisClient, concurrency: processLimit })
     }
 
     async getInfo(resolvedPath: string): Promise<VideoInfo> {
@@ -54,7 +46,7 @@ class FFProbeService {
     }
 
     private getJobKey(fileKey: string): string {
-        return `jobkey:${fileKey}`
+        return `job:${fileKey}`
     }
 
     private async getFileStats(resolvedPath: string): Promise<Stats> {
@@ -68,38 +60,13 @@ class FFProbeService {
 
     private async getFileKey(resolvedPath: string): Promise<string> {
         const stats = await this.getFileStats(resolvedPath)
-        return `${resolvedPath}:${stats.atime.getTime()}`
+        return await getHashString(`${resolvedPath}:${stats.atime.getTime()}`)
     }
 
     private async runVideoFileProbe(resolvedPath: string, jobKey: string): Promise<VideoInfo> {
-        let job: Job<FFProbeQueueJobData> | null = await this.que.getJob(jobKey)
+        await this.probeProcessor.addJob({ path: resolvedPath }, jobKey)
 
-        if (!job) {
-            job = await this.que.createJob({ path: resolvedPath }).setId(jobKey).save()
-
-            if (!job.id) {
-                // job alredy exist
-                job = await this.que.getJob(jobKey)
-            }
-        }
-
-        const result = await this.jobResult<FFProbeQueueJobData, VideoInfo>(job)
-
-        return result
-    }
-
-    private registerQueProcess() {
-        this.que.process(this.processLimit, async (job: Job<FFProbeQueueJobData>) => {
-            const data = job.data
-            return await getVideoFileProbe(data.path)
-        })
-    }
-
-    private async jobResult<T, S>(job: Job<T>): Promise<S> {
-        return new Promise((rs, rj) => {
-            job.once('succeeded', (result) => rs(result as S))
-            job.once('failed', (error) => rj(error))
-        })
+        return await this.probeProcessor.waitForJobResult(jobKey)
     }
 }
 

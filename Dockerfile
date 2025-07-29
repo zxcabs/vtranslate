@@ -1,5 +1,7 @@
 FROM node:23-alpine
 
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -10,4 +12,4 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["node", "./index.ts"]
+CMD ["node", "--experimental-transform-types", "./index.ts"]

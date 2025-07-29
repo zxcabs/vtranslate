@@ -83,9 +83,7 @@ const FileExplorer: React.FC = () => {
                                     className={`w-full text-left px-3 py-2 rounded transition-colors bg-blue-50 text-blue-800 hover:bg-blue-100 cursor-pointer`}
                                 >
                                     {entry.type === DirEntryType.Directory ? '📁' : '📄'} {entry.name}
-                                    {entry.type === DirEntryType.File && oppenedFile[entry.name] ? (
-                                        <FileInfo entry={entry} />
-                                    ) : undefined}
+                                    {entry.type === DirEntryType.File && oppenedFile[entry.name] ? <FileInfo entry={entry} /> : undefined}
                                 </button>
                             </li>
                         ))

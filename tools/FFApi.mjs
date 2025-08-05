@@ -5,7 +5,7 @@ import { makeDirectory } from 'make-dir'
 import isFileExist from '../utils/isFileExist.mjs'
 
 const asyncExec = promisify(exec)
- 
+
 export default class FFApi {
     static async translate(file, translateDir, outputDir) {
         const fileName = path.basename(file)
@@ -18,7 +18,7 @@ export default class FFApi {
         makeDirectory(outputDir)
 
         if (await isFileExist(outputFile)) {
-           return
+            return
         }
 
         const cmd = `ffmpeg -i "${file}" -i "${audioFile}" -i "${subEnFile}" -i "${subRuFile}"\
@@ -29,7 +29,7 @@ export default class FFApi {
             -metadata:s:s:0 language=eng -metadata:s:s:1 language=rus \
             -movflags +faststart \
             "${outputFile}"`
-        
+
         await asyncExec(cmd)
     }
 }

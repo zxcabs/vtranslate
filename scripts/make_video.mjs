@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import parseArgs from 'minimist'
 import path from 'node:path'
-import stopWithError from './utils/stopWithError.mjs'
-import readJsonFile from './utils/readJsonFile.mjs'
-import FFApi from './api/FFApi.mjs'
+import stopWithError from '../utils/stopWithError.js'
+import readJsonFile from '../utils/readJsonFile.mjs'
+import FFApi from '../tools/FFApi.mjs'
 
 const args = parseArgs(process.argv.slice(2))
 
@@ -31,8 +31,8 @@ const output_dir = path.normalize(`${OUTPUT_DIR}/${named_dir}/`)
 async function translate(file) {
     const filePath = path.normalize(file.path.replace('disk:', DISK_DIR))
     console.log(`Translate file: ${filePath}`)
-    
-     await FFApi.translate(filePath, TRANSLATE_DIR, output_dir)
+
+    await FFApi.translate(filePath, TRANSLATE_DIR, output_dir)
 }
 
 for (const file of files) {

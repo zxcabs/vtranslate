@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import parseArgs from 'minimist'
 import path from 'node:path'
-import stopWithError from './utils/stopWithError.js'
-import readJsonFile from './utils/readJsonFile.mjs'
-import FFApi from './api/FFApi.mjs'
+import stopWithError from '../utils/stopWithError.js'
+import readJsonFile from '../utils/readJsonFile.mjs'
+import FFApi from '../tools/FFApi.mjs'
 
 const args = parseArgs(process.argv.slice(2))
 

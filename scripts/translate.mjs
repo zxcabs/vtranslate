@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import parseArgs from 'minimist'
-import stopWithError from './utils/stopWithError.js'
-import readJsonFile from './utils/readJsonFile.mjs'
-import VOTApi from './api/VOTApi.mjs'
+import stopWithError from '../utils/stopWithError.js'
+import readJsonFile from '../utils/readJsonFile.mjs'
+import VOTApi from './tools/VOTApi.mjs'
 import path from 'node:path'
 
 const args = parseArgs(process.argv.slice(2))

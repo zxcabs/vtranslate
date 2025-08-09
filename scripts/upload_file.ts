@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import parseArgs from 'minimist'
-import WebDAVYApi from '../tools/YDApi.ts'
+import WebDAVYApi from '../tools/YDisk/YDApi.ts'
 import { basename } from 'node:path'
 
 const args = parseArgs(process.argv.slice(2))
@@ -12,7 +12,11 @@ const YA_FILE_PATH = `${YADIR}/${basename(FILE_PATH)}`
 const webdevApi = new WebDAVYApi({ token: TOKEN })
 
 console.log('Disk: ', await webdevApi.disk())
-console.log('uploadFile: ', await webdevApi.uploadFile(FILE_PATH, YA_FILE_PATH))
+
+const uploader = await webdevApi.uploadFile(FILE_PATH, YA_FILE_PATH, { overwrite: true })
+uploader.on('progress', console.log)
+await uploader.upload()
+
 //. console.log('publishFile: ', await webdevApi.publishFile(YA_FILE_PATH))
 //. console.log('getYdFileStats: ', await webdevApi.getYdFileStats(YA_FILE_PATH))
 //. console.log('removeFile :', await webdevApi.removeFile(YA_FILE_PATH))

@@ -1,13 +1,10 @@
-import fs from 'node:fs'
 import normalizeUrl from 'normalize-url'
-import getFileSize from '../utils/getFileSize.ts'
-import savedAsync from '../utils/savedAsync.ts'
-import PathNotFoundError from '../server/errors/PathNotFoundError.ts'
-import type { HttBody, HttpHeaders, HttpMethod } from '../types/Http.ts'
+import PathNotFoundError from '../../server/errors/PathNotFoundError.ts'
+import type { HttBody, HttpHeaders, HttpMethod } from '../../types/Http.ts'
+import YDUploader from './YDUploader.ts'
 
 interface YDApiContstructorOptions {
     token: string
-    chunkSize?: number
 }
 
 interface YDApiSearchParams extends Record<string, string | boolean | null | undefined> {
@@ -55,9 +52,7 @@ interface RequestOptions {
 
 export default class YDApi {
     static readonly YD_API_PREFIX = 'https://cloud-api.yandex.net/v1'
-    static DEFAULT_CHUNK_SIZE = 1 * 1024 * 1024
 
-    private chunkSize: number
     private token: string
     private abortController: AbortController
 
@@ -71,9 +66,8 @@ export default class YDApi {
         }, {})
     }
 
-    constructor({ token, chunkSize = YDApi.DEFAULT_CHUNK_SIZE }: YDApiContstructorOptions) {
+    constructor({ token }: YDApiContstructorOptions) {
         this.token = token
-        this.chunkSize = chunkSize
         this.abortController = new AbortController()
     }
 
@@ -86,50 +80,17 @@ export default class YDApi {
         return await this.createJSONRequest<YDApiDiskResult>('/disk', { fields })
     }
 
-    async uploadFile(filePath: string, yaFilePath: string) {
-        const fileSize = await getFileSize(filePath)
-        const [ydStats, ydStatsError] = await savedAsync(this.getStats(yaFilePath))
-
-        let writeFileSize = 0
-
-        if (!ydStatsError) {
-            writeFileSize = ydStats.size
-        }
-
-        if (writeFileSize === fileSize) {
-            return
-        }
-
+    async uploadFile(
+        filePath: string,
+        yaFilePath: string,
+        { chunkSize, overwrite }: { chunkSize?: number; overwrite?: boolean } = { overwrite: false },
+    ): Promise<YDUploader> {
         const { href: uploadUrl } = await this.createJSONRequest<YDUploadUrlResult>('/disk/resources/upload', {
             path: yaFilePath,
-            overwrite: 'false',
-        })
-        const readStream = fs.createReadStream(filePath, {
-            start: writeFileSize,
-            highWaterMark: this.chunkSize,
-            signal: this.abortController.signal,
+            overwrite: Boolean(overwrite),
         })
 
-        for await (const chunk of readStream) {
-            if (this.abortController.signal.aborted) return
-
-            const endSize = writeFileSize + chunk.length - 1
-
-            await this.makeRequest(
-                uploadUrl,
-                'PUT',
-                {
-                    'Content-Type': 'application/octet-stream',
-                    'Content-Range': `bytes ${writeFileSize}-${endSize}/${fileSize}`,
-                },
-                chunk,
-            )
-
-            writeFileSize += chunk.length
-            const progress = Number((writeFileSize / fileSize) * 100).toFixed(2)
-
-            console.log(`progress: ${progress}`)
-        }
+        return new YDUploader({ filePath, uploadUrl, chunkSize })
     }
 
     async publish(yaFilePath: string): Promise<YDPublishResult> {

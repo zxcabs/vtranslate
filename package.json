@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/ws": "^8.18.1",
     "bullmq": "^5.56.8",
     "dotenv": "^17.2.0",
     "dotenv-defaults": "^5.0.2",
@@ -23,6 +24,7 @@
     "minimist": "^1.2.8",
     "normalize-url": "^8.0.2",
     "vot-cli": "^1.4.3",
+    "ws": "^8.18.3",
     "xxhash-wasm": "^1.1.0"
   },
   "devDependencies": {

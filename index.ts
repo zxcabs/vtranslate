@@ -2,6 +2,8 @@ import 'dotenv-defaults/config.js'
 import app from './server/index.ts'
 import stopWithError from './utils/stopWithError.ts'
 import { redisClient } from './server/instances.ts'
+import { createServer } from 'node:http'
+import serverUse from './server/ws/index.ts'
 
 const PORT: string | undefined = process.env.PORT
 
@@ -57,10 +59,18 @@ signals.forEach((signal) => {
     })
 })
 
-const server = app.listen(PORT, (error) => {
-    if (error) {
-        console.error(error.message)
+const server = createServer(app)
+
+serverUse(server)
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} already in use.`)
     } else {
-        console.log(`Server is running on http://localhost:${PORT}`)
+        console.error('HTTPServer error:', err.message)
     }
+})
+
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`)
 })

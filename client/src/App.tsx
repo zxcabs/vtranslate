@@ -1,3 +1,4 @@
+import './index.css'
 import FileExplorer from './components/FileExplorer'
 
 function App() {

@@ -1,26 +1,36 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { type DirEntryFile } from '../../../types/DirEntry'
-import { getJSON } from '../api.ts'
-import { type VideoInfo } from '../../../types/VideoInfo'
+import { useSelector } from 'react-redux'
+import { selectById } from '../features/fileInfo/selectors.ts'
+import getFullPath from '../features/fileInfo/getFullPath.ts'
+import { RootState } from '../store.ts'
+import { useAppDispatch } from '../hooks/useAppDispatch.ts'
+import { fetchFileInfoIfNeeded } from '../features/fileInfo/thunks.ts'
+import { clearByEntry, STATUS } from '../features/fileInfo/fileInfoSlice.ts'
 
 interface Props {
     entry: DirEntryFile
 }
 
 const FileInfo: React.FC<Props> = ({ entry }) => {
-    const [info, setInfo] = useState<VideoInfo | null>(null)
-
-    const fetchFileInfo = async (entry: DirEntryFile) => {
-        const info = await getJSON<VideoInfo>('readinfo', { path: `${entry.path}/${entry.name}` })
-
-        setInfo(info)
-    }
+    const id = getFullPath(entry)
+    const fileInfo = useSelector((state: RootState) => selectById(state, id))
+    const dispatch = useAppDispatch()
 
     useEffect(() => {
-        fetchFileInfo(entry)
-    }, [entry])
+        dispatch(fetchFileInfoIfNeeded(entry))
 
-    return <div>{info ? JSON.stringify(info) : null}</div>
+        return () => {
+            dispatch(clearByEntry(entry))
+        }
+    }, [dispatch, entry])
+
+    if (!fileInfo || fileInfo.status === STATUS.LOADING) return <div>loading</div>
+
+    const { status, error, info } = fileInfo
+    if (status === STATUS.ERROR) return <div>{error}</div>
+
+    return <div>{JSON.stringify(info, null, 2)}</div>
 }
 
 export default FileInfo

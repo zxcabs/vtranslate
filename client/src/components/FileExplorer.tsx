@@ -1,54 +1,59 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { DirEntryType, type DirEntry } from '../../../types/DirEntry'
 import checkDirEntryIsVideo from '../../../utils/checkDirEntryIsVideo'
 import FileInfo from './FileInfo'
-import { getJSON } from '../api'
+import { useSelector } from 'react-redux'
+import {
+    selectAllEntries,
+    selectDirEntriesCurrentPath,
+    selectDirEntriesError,
+    selectDirEntriesStatus,
+} from '../features/dirEntries/selectors.ts'
+import { STATUS } from '../features/dirEntries/dirEntriesSlice.ts'
+import { useAppDispatch } from '../hooks/useAppDispatch.ts'
+import { fetchEntriesIfNeeded } from '../features/dirEntries/thunks.ts'
 
 const FileExplorer: React.FC = () => {
-    const [path, setPath] = useState<string>('/')
-    const [entries, setEntries] = useState<DirEntry[]>([])
-    const [loading, setLoading] = useState<boolean>(true)
-    const [error, setError] = useState<string | null>(null)
+    const dispatch = useAppDispatch()
+    const entries = useSelector(selectAllEntries)
+    const status = useSelector(selectDirEntriesStatus)
+    const currentPath = useSelector(selectDirEntriesCurrentPath)
+    const error = useSelector(selectDirEntriesError)
     const [oppenedFile, setOppenedFile] = useState<Record<string, boolean>>({})
 
+    const navigateTo = useCallback(
+        (path: string) => {
+            dispatch(fetchEntriesIfNeeded(path))
+            setOppenedFile({})
+        },
+        [dispatch],
+    )
+
+    const goUp = useCallback(() => {
+        if (currentPath === '/') return
+        const upPath = currentPath.split('/').slice(0, -1).join('/') || '/'
+        navigateTo(upPath)
+    }, [currentPath])
+
+    const handleNavigate = useCallback(
+        (entry: DirEntry) => {
+            const { type, name } = entry
+            if (checkDirEntryIsVideo(entry)) {
+                setOppenedFile((last) => ({
+                    ...last,
+                    [entry.name]: !last[entry.name],
+                }))
+            } else if (type === DirEntryType.Directory) {
+                const newPath = currentPath === '/' ? `/${name}` : `${currentPath}/${name}`
+                navigateTo(newPath)
+            }
+        },
+        [navigateTo, currentPath],
+    )
+
     useEffect(() => {
-        fetchDirectory(path)
-        setOppenedFile({})
-    }, [path])
-
-    const fetchDirectory = async (dirPath: string) => {
-        setLoading(true)
-        setError(null)
-        try {
-            const list = await getJSON<DirEntry[]>('readdir', { path: dirPath })
-
-            setEntries(list)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const handleNavigate = (entry: DirEntry) => {
-        const { type, name } = entry
-
-        if (checkDirEntryIsVideo(entry)) {
-            setOppenedFile((last) => ({
-                ...last,
-                [entry.name]: !last[entry.name],
-            }))
-        } else if (type === DirEntryType.Directory) {
-            const newPath = path === '/' ? `/${name}` : `${path}/${name}`
-            setPath(newPath)
-        }
-    }
-
-    const goUp = () => {
-        if (path === '/') return
-        const upPath = path.split('/').slice(0, -1).join('/') || '/'
-        setPath(upPath)
-    }
+        navigateTo('/')
+    }, [navigateTo])
 
     return (
         <div className="p-6 max-w-3xl mx-auto bg-white shadow-lg rounded-lg">
@@ -58,18 +63,18 @@ const FileExplorer: React.FC = () => {
             <div className="mb-4">
                 <button
                     onClick={goUp}
-                    disabled={path === '/'}
-                    className={`text-sm ${path === '/' ? 'text-gray-400' : 'text-blue-600 hover:underline'}`}
+                    disabled={currentPath === '/'}
+                    className={`text-sm ${currentPath === '/' ? 'text-gray-400' : 'text-blue-600 hover:underline'}`}
                 >
                     🔼 Наверх
                 </button>
             </div>
 
-            <div className="font-mono text-sm text-gray-500 mb-2">Путь: {path}</div>
+            <div className="font-mono text-sm text-gray-500 mb-2">Путь: {currentPath}</div>
 
             {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">Ошибка: {error}</div>}
 
-            {loading ? (
+            {status === STATUS.LOADING ? (
                 <div className="text-center py-4">Загрузка...</div>
             ) : (
                 <ul className="space-y-1">

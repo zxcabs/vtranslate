@@ -14,7 +14,6 @@ interface FFProbeServiceConstructorOptions {
 }
 
 class FFProbeService {
-    private processLimit: number
     protected redis: RedisClient
     protected probeProcessor: ProbeProcessor
 
@@ -23,6 +22,10 @@ class FFProbeService {
 
         this.redis = redis
         this.probeProcessor = new ProbeProcessor({ redis: redis.redisClient, concurrency: processLimit })
+    }
+
+    get processor() {
+        return this.probeProcessor
     }
 
     async getInfo(resolvedPath: string): Promise<VideoInfo> {

@@ -1,9 +1,9 @@
 import 'dotenv-defaults/config.js'
 import app from './server/index.ts'
 import stopWithError from './utils/stopWithError.ts'
-import { redisClient } from './server/instances.ts'
-import { createServer } from 'node:http'
-import serverUse from './server/ws/index.ts'
+import { ffProbeService, redisClient } from './server/instances.ts'
+import WSS from './server/ws/WSS.ts'
+import WSServiceBridge from './server/ws/WSServiceBridge.ts'
 
 const PORT: string | undefined = process.env.PORT
 
@@ -59,9 +59,12 @@ signals.forEach((signal) => {
     })
 })
 
-const server = createServer(app)
+const server = app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`)
+})
 
-serverUse(server)
+const wsBridge = new WSServiceBridge(new WSS(server))
+wsBridge.addService(ffProbeService.processor)
 
 server.on('error', (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
@@ -69,8 +72,4 @@ server.on('error', (err: NodeJS.ErrnoException) => {
     } else {
         console.error('HTTPServer error:', err.message)
     }
-})
-
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`)
 })

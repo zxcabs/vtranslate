@@ -56,7 +56,7 @@ const FileExplorer: React.FC = () => {
     }, [navigateTo])
 
     return (
-        <div className="p-6 max-w-3xl mx-auto bg-white shadow-lg rounded-lg">
+        <div className="p-6 w-full mx-auto bg-white shadow-lg rounded-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">File Explorer</h1>
 
             {/* Хлебные крошки */}

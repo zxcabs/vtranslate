@@ -1,6 +1,25 @@
 import { Job, Queue, Worker, QueueEvents } from 'bullmq'
 import Redis from 'ioredis'
 
+export abstract class BaseQueueProcessor {
+    readonly name: string
+    protected que: Queue
+    protected worker: Worker
+    protected queEvents: QueueEvents
+
+    constructor(name: string) {
+        this.name = name
+    }
+
+    get queue(): Queue {
+        return this.que
+    }
+
+    get events(): QueueEvents {
+        return this.queEvents
+    }
+}
+
 export interface QueueProcessorOptions {
     redis: Redis
     concurrency?: number
@@ -10,18 +29,13 @@ export interface QueueProcessorOptions {
     waitJobTimeout?: number
 }
 
-export default abstract class QueueProcessor<JD, JR> {
-    protected readonly name: string
+export default abstract class QueueProcessor<JD, JR> extends BaseQueueProcessor {
     protected readonly options: QueueProcessorOptions
 
-    protected que: Queue
-    protected worker: Worker
-    protected queEvents: QueueEvents
-
     constructor(name: string, options: QueueProcessorOptions) {
+        super(name)
         const { redis, concurrency = 1, autorun = true, removeOnComplete = 1000, removeOnFail = 1000, waitJobTimeout = 60000 } = options
 
-        this.name = name
         this.options = { redis, concurrency, autorun, removeOnComplete, removeOnFail, waitJobTimeout }
 
         this.createQue(redis)

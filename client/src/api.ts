@@ -1,6 +1,6 @@
 const API_BASE = '/api'
 
-export async function getJSON<T>(path: string = '/', params: Record<string, string>): Promise<T> {
+export async function getJSON<T>(path: string = '/', params?: Record<string, string>): Promise<T> {
     const query = new URLSearchParams(params)
     const queryString = params ? `?${query.toString()}` : ''
 

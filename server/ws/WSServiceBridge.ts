@@ -26,25 +26,29 @@ export default class WSServiceBridge {
 
     private setServiceEventHandlers(service: BaseQueueProcessor) {
         WSServiceBridge.listenQueueEvents.map((name) => {
-            service.events.on(name, this.createQueueEventHandler(name))
+            service.events.on(name, this.createQueueEventHandler(service.name, name))
         })
 
-        service.events.on('progress', this.progressQueueEventHandler.bind(this))
-        service.events.on('failed', this.failedQueueEventHandler.bind(this))
+        service.events.on('progress', (data) => {
+            this.progressQueueEventHandler(service.name, data)
+        })
+        service.events.on('failed', (data) => {
+            this.failedQueueEventHandler(service.name, data)
+        })
     }
 
-    private createQueueEventHandler(eventName: WSQueueEventsMapNames) {
+    private createQueueEventHandler(serviceName: string, eventName: WSQueueEventsMapNames) {
         return ({ jobId }: { jobId: string }) => {
-            this.send({ type: 'queueEvent', event: eventName, jobId })
+            this.send({ type: 'queueEvent', service: serviceName, event: eventName, jobId })
         }
     }
 
-    private progressQueueEventHandler({ jobId, data }: { jobId: string; data: JobProgress }) {
-        this.send({ type: 'queueEvent', event: 'progress', jobId, progress: Number(data) })
+    private progressQueueEventHandler(serviceName: string, { jobId, data }: { jobId: string; data: JobProgress }) {
+        this.send({ type: 'queueEvent', service: serviceName, event: 'progress', jobId, progress: Number(data) })
     }
 
-    private failedQueueEventHandler({ jobId, failedReason }: { jobId: string; failedReason: string }) {
-        this.send({ type: 'queueEvent', event: 'failed', jobId, reason: failedReason })
+    private failedQueueEventHandler(serviceName: string, { jobId, failedReason }: { jobId: string; failedReason: string }) {
+        this.send({ type: 'queueEvent', service: serviceName, event: 'failed', jobId, reason: failedReason })
     }
 
     private send(data: WSQueueEvent) {

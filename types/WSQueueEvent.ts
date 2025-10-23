@@ -1,10 +1,14 @@
 import type { WSMessage } from './WSMessage.ts'
 
+export type WSQueueEventType = 'queueEvent'
+export type WSQueueJobId = string
+export type WSQueueServiceName = string
 export type WSQueueEventName = 'active' | 'added' | 'cleaned' | 'completed' | 'removed' | 'waiting' | 'progress' | 'failed'
 
 interface WSQueueEventBase extends WSMessage {
-    type: 'queueEvent'
-    jobId: string
+    type: WSQueueEventType
+    service: WSQueueServiceName
+    jobId: WSQueueJobId
     event: WSQueueEventName
 }
 

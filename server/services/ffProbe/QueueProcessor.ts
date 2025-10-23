@@ -3,9 +3,9 @@ import Redis from 'ioredis'
 
 export abstract class BaseQueueProcessor {
     readonly name: string
-    protected que: Queue
-    protected worker: Worker
-    protected queEvents: QueueEvents
+    protected abstract que: Queue
+    protected abstract worker: Worker
+    protected abstract queEvents: QueueEvents
 
     constructor(name: string) {
         this.name = name
@@ -31,6 +31,9 @@ export interface QueueProcessorOptions {
 
 export default abstract class QueueProcessor<JD, JR> extends BaseQueueProcessor {
     protected readonly options: QueueProcessorOptions
+    protected que: Queue
+    protected queEvents: QueueEvents
+    protected worker: Worker
 
     constructor(name: string, options: QueueProcessorOptions) {
         super(name)
@@ -38,49 +41,51 @@ export default abstract class QueueProcessor<JD, JR> extends BaseQueueProcessor 
 
         this.options = { redis, concurrency, autorun, removeOnComplete, removeOnFail, waitJobTimeout }
 
-        this.createQue(redis)
-        this.createEvents(redis)
-        this.createWorker(redis)
+        this.que = this.createQue(redis)
+        this.queEvents = this.createEvents(redis)
+        this.worker = this.createWorker(redis)
     }
 
     private createQue(redis: Redis) {
-        this.que = new Queue(this.name, {
+        return new Queue(this.name, {
             connection: redis,
         })
     }
 
     private createEvents(redis: Redis) {
-        this.queEvents = new QueueEvents(this.name, {
+        return new QueueEvents(this.name, {
             connection: redis,
         })
     }
 
     private createWorker(redis: Redis) {
-        this.worker = new Worker(this.name, this.workerProcessor.bind(this), {
+        const worker = new Worker(this.name, this.workerProcessor.bind(this), {
             connection: redis,
             concurrency: this.options.concurrency,
             autorun: this.options.autorun,
         })
 
-        this.worker.on('error', (err) => {
+        worker.on('error', (err) => {
             console.error(`[BullMQ] Worker "${this.name}" error:`, err)
         })
 
-        this.worker.on('completed', (job) => {
+        worker.on('completed', (job) => {
             console.log(`[BullMQ] Job "${this.name}"."${job.id}" completed`)
         })
 
-        this.worker.on('active', (job) => {
+        worker.on('active', (job) => {
             console.log(`[BullMQ] Job "${this.name}"."${job.id}" active`)
         })
 
-        this.worker.on('failed', (error) => {
+        worker.on('failed', (error) => {
             console.log(`[BullMQ] "${this.name}" failed: ${error}`)
         })
 
-        this.worker.on('progress', (job) => {
+        worker.on('progress', (job) => {
             console.log(`[BullMQ] Job "${this.name}"."${job.id}" progress: ${job.progress}`)
         })
+
+        return worker
     }
 
     protected abstract workerProcessor(job: Job<JD>): Promise<JR>
@@ -110,7 +115,7 @@ export default abstract class QueueProcessor<JD, JR> extends BaseQueueProcessor 
             const result = await job.waitUntilFinished(this.queEvents, this.options.waitJobTimeout)
             return result as JR
         } catch (err) {
-            throw new Error(`Job ${jobId} failed or timeout: ${err.message}`)
+            throw new Error(`Job ${jobId} failed or timeout: ${err}`)
         }
     }
 

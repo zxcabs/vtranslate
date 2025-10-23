@@ -1,4 +1,9 @@
+.git
+.vscode
 npm-debug.log
+Dockerfile
+docker-compose.yml
+.dockerignore
 .DS_Store
 .env
 output
@@ -6,4 +11,4 @@ output_video
 node_modules
 translate
 video
-client_dist
+client/node_modules

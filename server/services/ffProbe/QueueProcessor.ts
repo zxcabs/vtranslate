@@ -1,0 +1,129 @@
+import { Job, Queue, Worker, QueueEvents } from 'bullmq'
+import Redis from 'ioredis'
+
+export abstract class BaseQueueProcessor {
+    readonly name: string
+    protected abstract que: Queue
+    protected abstract worker: Worker
+    protected abstract queEvents: QueueEvents
+
+    constructor(name: string) {
+        this.name = name
+    }
+
+    get queue(): Queue {
+        return this.que
+    }
+
+    get events(): QueueEvents {
+        return this.queEvents
+    }
+}
+
+export interface QueueProcessorOptions {
+    redis: Redis
+    concurrency?: number
+    autorun?: boolean
+    removeOnComplete?: number | boolean
+    removeOnFail?: number | boolean
+    waitJobTimeout?: number
+}
+
+export default abstract class QueueProcessor<JD, JR> extends BaseQueueProcessor {
+    protected readonly options: QueueProcessorOptions
+    protected que: Queue
+    protected queEvents: QueueEvents
+    protected worker: Worker
+
+    constructor(name: string, options: QueueProcessorOptions) {
+        super(name)
+        const { redis, concurrency = 1, autorun = true, removeOnComplete = 1000, removeOnFail = 1000, waitJobTimeout = 60000 } = options
+
+        this.options = { redis, concurrency, autorun, removeOnComplete, removeOnFail, waitJobTimeout }
+
+        this.que = this.createQue(redis)
+        this.queEvents = this.createEvents(redis)
+        this.worker = this.createWorker(redis)
+    }
+
+    private createQue(redis: Redis) {
+        return new Queue(this.name, {
+            connection: redis,
+        })
+    }
+
+    private createEvents(redis: Redis) {
+        return new QueueEvents(this.name, {
+            connection: redis,
+        })
+    }
+
+    private createWorker(redis: Redis) {
+        const worker = new Worker(this.name, this.workerProcessor.bind(this), {
+            connection: redis,
+            concurrency: this.options.concurrency,
+            autorun: this.options.autorun,
+        })
+
+        worker.on('error', (err) => {
+            console.error(`[BullMQ] Worker "${this.name}" error:`, err)
+        })
+
+        worker.on('completed', (job) => {
+            console.log(`[BullMQ] Job "${this.name}"."${job.id}" completed`)
+        })
+
+        worker.on('active', (job) => {
+            console.log(`[BullMQ] Job "${this.name}"."${job.id}" active`)
+        })
+
+        worker.on('failed', (error) => {
+            console.log(`[BullMQ] "${this.name}" failed: ${error}`)
+        })
+
+        worker.on('progress', (job) => {
+            console.log(`[BullMQ] Job "${this.name}"."${job.id}" progress: ${job.progress}`)
+        })
+
+        return worker
+    }
+
+    protected abstract workerProcessor(job: Job<JD>): Promise<JR>
+
+    async addJob(data: JD, jobId?: string): Promise<Job<JD>> {
+        const job = await this.que.add(this.name, data, {
+            jobId,
+            removeOnComplete: this.options.removeOnComplete,
+            removeOnFail: this.options.removeOnFail,
+        })
+
+        return job as Job<JD>
+    }
+
+    async getJob(id: string): Promise<Job<JD> | null> {
+        const job = await this.que.getJob(id)
+
+        return (job as Job<JD>) || null
+    }
+
+    async waitForJobResult(jobId: string): Promise<JR> {
+        const job = await this.que.getJob(jobId)
+
+        if (!job) throw new Error(`Job ${jobId} not found`)
+
+        try {
+            const result = await job.waitUntilFinished(this.queEvents, this.options.waitJobTimeout)
+            return result as JR
+        } catch (err) {
+            throw new Error(`Job ${jobId} failed or timeout: ${err}`)
+        }
+    }
+
+    async shutdown(): Promise<void> {
+        await this.que.close()
+        await this.worker.close()
+        await this.queEvents.close()
+
+        console.log(`[Queue] Processor "${this.name}" shutdown complete`)
+    }
+}

@@ -2,9 +2,9 @@ import { lstat } from 'node:fs/promises'
 
 export default async function isFileExist(filePath) {
     try {
-       const fileStat = await lstat(filePath)
+        const fileStat = await lstat(filePath)
 
-       return !!fileStat
+        return !!fileStat
     } catch (error) {
         return error.code !== 'ENOENT'
     }
